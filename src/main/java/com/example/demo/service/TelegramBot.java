@@ -62,11 +62,13 @@ public class TelegramBot extends TelegramLongPollingBot {
             case 1 -> {
                 try {
                     addUser(chatId, messageGet);
+                    active = 0;
                 } catch (IOException e) {
-                    sendMessage(chatId,"Pls, write username in one word");
+                    sendMessage(chatId, "Pls, write username in one word");
                 }
             }
             case 2 -> {
+                active = 0;
             }
             default -> sendMessage(chatId, "I do not understand you");
         }
