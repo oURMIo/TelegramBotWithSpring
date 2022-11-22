@@ -49,8 +49,15 @@ public class TelegramBot extends TelegramLongPollingBot {
                     }
                 }
                 case "/add" -> {
-                    sendMessage(chatId, "Pls, enter the name you want to add to the database - ");
+                    sendMessage(chatId, "Pls, enter the name user which you want add to the database - ");
                     active = 1;
+                }
+                case "/help" -> {
+                    help(chatId);
+                }
+                case "/delete_id" ->{
+                    sendMessage(chatId,"Pls, enter the id user which you want add to the database -");
+                    active = 2;
                 }
                 default -> checkActive(chatId, messageGet);
             }
@@ -68,14 +75,28 @@ public class TelegramBot extends TelegramLongPollingBot {
                 }
             }
             case 2 -> {
-                active = 0;
+                try {
+                    deleteUserById(chatId, messageGet);
+                    active = 0;
+                } catch (IOException e) {
+                    sendMessage(chatId, "Pls, write username in one word");
+                }
             }
             default -> sendMessage(chatId, "I do not understand you");
         }
     }
 
     private void start(Long chatId, String name) {
-        String messageSend = "Hi honey, " + name + " (〃￣︶￣)人(￣︶￣〃)";
+        String messageSend = "Hi honey, " + name + " (〃￣︶￣)人(￣︶￣〃) \n" +
+                "use /help for looking what I can";
+        sendMessage(chatId, messageSend);
+    }
+
+    private void help(Long chatId) {
+        String messageSend = "You can use these commands : \n\n" +
+                " /show   - show all users in db \n" +
+                " /add    - add new user in db \n" +
+                " /delete - delete user from db \n";
         sendMessage(chatId, messageSend);
     }
 
@@ -105,6 +126,22 @@ public class TelegramBot extends TelegramLongPollingBot {
 
         connection.setRequestMethod("GET");
 
+        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        String inputLine;
+        StringBuilder response = new StringBuilder();
+
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
+        sendMessage(chatId, response.toString());
+    }
+
+    private void deleteUserById(Long chatId, String deleteId) throws IOException {
+        String url = "http://chserv.ddns.net:8080/delete/" + deleteId;
+        URL obj = new URL(url);
+        HttpURLConnection connection = (HttpURLConnection) obj.openConnection();
+        connection.setRequestMethod("GET");
         BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
         String inputLine;
         StringBuilder response = new StringBuilder();
