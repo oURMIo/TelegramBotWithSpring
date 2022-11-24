@@ -101,11 +101,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void help(Long chatId) {
-        String messageSend = "You can use these commands : \n\n" +
-                " /show   - show all users in db \n" +
-                " /add    - add new user in db \n" +
-                " /delete_id - delete user by id from db \n" +
-                " /delete_name - delete user by name from db \n";
+        String messageSend =
+                "You can use these commands : \n\n" +
+                "   /show   - show all users in db \n" +
+                "   /add    - add new user in db \n" +
+                "   /delete_name - delete user by name from db \n";
         sendMessage(chatId, messageSend);
     }
 
