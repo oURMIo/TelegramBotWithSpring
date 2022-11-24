@@ -1,13 +1,22 @@
 package com.example.demo.service;
 
 import com.example.demo.config.BotConfig;
+import com.spire.doc.Document;
+import com.spire.doc.FileFormat;
+import com.spire.doc.Section;
+import com.spire.doc.documents.BuiltinStyle;
+import com.spire.doc.documents.Paragraph;
+import com.spire.doc.documents.ParagraphStyle;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
@@ -59,6 +68,14 @@ public class TelegramBot extends TelegramLongPollingBot {
                     sendMessage(chatId, "Pls, enter the name user which you want add to the database -");
                     active = 2;
                 }
+                case "/export" -> {
+                    try {
+                        sendMessage(chatId, "I send a file with the names of all users");
+                        createDocumentAndSendAboutUsers(chatId);
+                    } catch (IOException e) {
+                        sendMessage(chatId, "now 'export' don't work");
+                    }
+                }
                 default -> checkActive(chatId, messageGet);
             }
         }
@@ -103,29 +120,14 @@ public class TelegramBot extends TelegramLongPollingBot {
     private void help(Long chatId) {
         String messageSend =
                 "You can use these commands : \n\n" +
-                "   /show   - show all users in db \n" +
-                "   /add    - add new user in db \n" +
-                "   /delete_name - delete user by name from db \n";
+                        "   /show   - show all users in db \n" +
+                        "   /add    - add new user in db \n" +
+                        "   /delete_name - delete user by name from db \n";
         sendMessage(chatId, messageSend);
     }
 
     private void showUsers(Long chatId) throws IOException {
-        String url = "http://chserv.ddns.net:8080/show";
-        URL obj = new URL(url);
-        HttpURLConnection connection = (HttpURLConnection) obj.openConnection();
-
-        connection.setRequestMethod("GET");
-
-        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-        String inputLine;
-        StringBuilder response = new StringBuilder();
-
-        while ((inputLine = in.readLine()) != null) {
-            response.append(inputLine);
-        }
-        in.close();
-        String messageSend = response.toString();
-        sendMessage(chatId, messageSend);
+        sendMessage(chatId, getUserRequestToServer());
     }
 
     private void addUser(Long chatId, String name) throws IOException {
@@ -177,6 +179,56 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         in.close();
         sendMessage(chatId, response.toString());
+    }
+
+    private String getUserRequestToServer() throws IOException {
+        String url = "http://chserv.ddns.net:8080/show";
+        URL obj = new URL(url);
+        HttpURLConnection connection = (HttpURLConnection) obj.openConnection();
+        connection.setRequestMethod("GET");
+        BufferedReader in = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+        String inputLine;
+        StringBuilder response = new StringBuilder();
+        while ((inputLine = in.readLine()) != null) {
+            response.append(inputLine);
+        }
+        in.close();
+        return response.toString();
+    }
+
+    private void createDocumentAndSendAboutUsers(Long chatId) throws IOException {
+        /*  Create document docs*/
+        Document document = new Document();
+        Section section = document.addSection();
+        Paragraph subheading_1 = section.addParagraph();
+        subheading_1.appendText("List all users");
+        Paragraph para_1 = section.addParagraph();
+        para_1.appendText(getUserRequestToServer());
+        subheading_1.applyStyle(BuiltinStyle.Heading_3);
+        ParagraphStyle style = new ParagraphStyle(document);
+        style.setName("paraStyle");
+        style.getCharacterFormat().setFontName("Arial");
+        style.getCharacterFormat().setFontSize(11f);
+        document.getStyles().add(style);
+        para_1.applyStyle("paraStyle");
+        document.saveToFile("./word.docx", FileFormat.Docx);
+        InputFile inputFile = new InputFile("/home/dach/IdeaProjects/TelegramBotWithSpring/word.docx");
+        sendMessage(chatId, "createDocumentAndSendAboutUsers");
+        sendDocument(chatId, inputFile);
+    }
+
+    private void sendDocument(Long chatId, InputFile document) {
+        SendDocument sendDocument = new SendDocument(String.valueOf(chatId), document);
+/*        sendDocument.setChatId(String.valueOf(chatId));
+        sendDocument.setCaption("File");
+        sendDocument.setDocument(document);*/
+
+
+        try {
+            execute(sendDocument);
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void sendMessage(Long chatId, String textMessage) {
