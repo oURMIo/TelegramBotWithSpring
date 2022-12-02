@@ -69,12 +69,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                     active = 2;
                 }
                 case "/export" -> {
-                    try {
-                        sendMessage(chatId, "I send a file with the names of all users");
-                        createDocumentAndSendAboutUsers(chatId);
-                    } catch (IOException e) {
-                        sendMessage(chatId, "now 'export' don't work");
-                    }
+                    sendMessage(chatId, "Follow this link - \n"
+                            + "http://chserv.ddns.net:8080/listUsers.docx");
                 }
                 default -> checkActive(chatId, messageGet);
             }
@@ -194,41 +190,6 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         in.close();
         return response.toString();
-    }
-
-    private void createDocumentAndSendAboutUsers(Long chatId) throws IOException {
-        /*  Create document docs*/
-        Document document = new Document();
-        Section section = document.addSection();
-        Paragraph subheading_1 = section.addParagraph();
-        subheading_1.appendText("List all users");
-        Paragraph para_1 = section.addParagraph();
-        para_1.appendText(getUserRequestToServer());
-        subheading_1.applyStyle(BuiltinStyle.Heading_3);
-        ParagraphStyle style = new ParagraphStyle(document);
-        style.setName("paraStyle");
-        style.getCharacterFormat().setFontName("Arial");
-        style.getCharacterFormat().setFontSize(11f);
-        document.getStyles().add(style);
-        para_1.applyStyle("paraStyle");
-        document.saveToFile("./word.docx", FileFormat.Docx);
-        InputFile inputFile = new InputFile("/home/dach/IdeaProjects/TelegramBotWithSpring/word.docx");
-        sendMessage(chatId, "createDocumentAndSendAboutUsers");
-        sendDocument(chatId, inputFile);
-    }
-
-    private void sendDocument(Long chatId, InputFile document) {
-        SendDocument sendDocument = new SendDocument(String.valueOf(chatId), document);
-/*        sendDocument.setChatId(String.valueOf(chatId));
-        sendDocument.setCaption("File");
-        sendDocument.setDocument(document);*/
-
-
-        try {
-            execute(sendDocument);
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private void sendMessage(Long chatId, String textMessage) {
